@@ -23,6 +23,12 @@ kotlin {
     jvmToolchain(21)
 }
 
+sourceSets {
+    main {
+        kotlin.exclude("**/Main.kt")
+    }
+}
+
 tasks.test {
     useJUnitPlatform()
 }
