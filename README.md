@@ -17,7 +17,7 @@ Query Petruz is a single-user desktop client for DBA database troubleshooting. I
 ## Requirements
 
 - JDK 21 for development and packaging.
-- Node.js 20+ and npm.
+- Node.js 24+ and npm. The GitHub Actions packaging workflow also uses Node.js 24.
 - No system Gradle installation is required. The npm scripts call the committed Gradle Wrapper internally when they need to build or test the Kotlin sidecar.
 - A trusted JDBC driver JAR for the target database, imported from the application menu.
 - For SSH: the target fingerprint must be in `$HOME/.ssh/known_hosts`; private key authentication is preferred.
