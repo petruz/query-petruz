@@ -1,9 +1,14 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const rendererRoot = dirname(fileURLToPath(import.meta.url))
+const projectRoot = resolve(rendererRoot, '..')
 
 export default defineConfig({
     plugins: [react()],
-    root: new URL('.', import.meta.url).pathname,
-    css: { postcss: './renderer/postcss.config.js' },
-    build: { outDir: '../dist/renderer', emptyOutDir: true },
+    root: rendererRoot,
+    css: { postcss: resolve(rendererRoot, 'postcss.config.js') },
+    build: { outDir: resolve(projectRoot, 'dist/renderer'), emptyOutDir: true },
 })

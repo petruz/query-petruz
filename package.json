@@ -43,7 +43,7 @@
     ],
     "linux": {
       "category": "Development",
-      "maintainer": "Luca Petruzziello <luca.petruzziello@example.com>",
+      "maintainer": "Luca Petruzziello <info@petruz.it>",
       "target": [
         "AppImage",
         "deb"
