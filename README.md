@@ -16,11 +16,15 @@ Query Petruz is a single-user desktop client for DBA database troubleshooting. I
 
 ## Requirements
 
-- JDK 21.
+- JDK 21 for development and packaging.
 - Node.js 20+ and npm.
-- No system Gradle installation is required: the committed Gradle Wrapper downloads Gradle 8.10.2 on first use.
-- A JDBC driver JAR for the target database, placed in the local `drivers/` directory.
+- No system Gradle installation is required. The npm scripts call the committed Gradle Wrapper internally when they need to build or test the Kotlin sidecar.
+- A trusted JDBC driver JAR for the target database, imported from the application menu.
 - For SSH: the target fingerprint must be in `$HOME/.ssh/known_hosts`; private key authentication is preferred.
+
+Installed packages include a minimal Java 21 runtime generated with `jlink`, so target machines do not need Java installed. In development, the app still uses the local JDK through Gradle. Set `QUERY_PETRUZ_JAVA` only for development troubleshooting or to override the embedded runtime deliberately.
+
+For normal development and packaging, use the npm commands below. You do not need to run `gradlew` directly unless you are debugging the Kotlin sidecar itself.
 
 ## Run
 
@@ -36,17 +40,39 @@ Use **Connection > Import JDBC Driver...** and select a trusted `.jar` file. Que
 
 The folder is managed by Electron and is operating-system specific: on Linux it is normally `~/.config/query-petruz/drivers`; Windows and macOS use their standard application-data locations. The project-local `drivers/` directory is retained only as a development fallback. Both locations exclude `*.jar` through `.gitignore`, so drivers are never committed with the source. A JDBC driver is executable code: only import JARs downloaded from a trusted vendor or repository.
 
-Create an installable OS package:
+Build the renderer and sidecar without creating an installer:
 
 ```bash
 npm run build
 ```
 
+This command runs both the React/Vite build and the Kotlin sidecar build, including the embedded Java runtime.
+
+Create a native installer for the current operating system:
+
+```bash
+npm run dist
+```
+
+Create platform-specific installers:
+
+```bash
+npm run dist:linux   # AppImage and deb, run on Linux
+npm run dist:win     # NSIS exe, run on Windows
+npm run dist:mac     # dmg, run on macOS
+```
+
+Installer output is written to `release/`. Cross-platform packaging should be performed natively on each OS; the included GitHub Actions workflow runs a Linux, Windows, and macOS matrix and uploads the generated installers as artifacts.
+
 Run tests:
 
 ```bash
-./gradlew test
+npm run test:sidecar
 ```
+
+This command also uses the Gradle Wrapper internally.
+
+The packaging workflow is defined in `.github/workflows/package.yml`. It builds native installers on each operating system using GitHub Actions: Linux produces `.AppImage` and `.deb`, Windows produces an NSIS `.exe`, and macOS produces a `.dmg`.
 
 ## Basic use
 
@@ -55,7 +81,7 @@ Run tests:
 3. Write SQL in the editor and select **Run**.
 4. Select **Save query** to place the current SQL in the local tree.
 5. Enter a path and use **Export** / **Import queries** for `queries.json`.
-6. Use **Export profile** / **Import profile** for a connection profile. Its password is deliberately omitted and must be entered after loading.
+6. Use **Export profile** / **Import profile** for a connection profile. Passwords are included in the exported JSON, so protect those files.
 7. Select **Export CSV** after a successful result set.
 
 ## JSON formats
@@ -92,4 +118,4 @@ This tool assumes the active user is a DBA and intentionally permits destructive
 
 ## Current scope
 
-The initial Electron UI retains the Query Mole navigation tree, query editor, result views, charting, and exports. The next engineering increments should add a packaged JDBC driver catalog, native file dialogs, query cancellation, OS credential-keyring integration, a schema browser, and packaged Electron builds.
+The initial Electron UI retains the Query Mole navigation tree, query editor, result views, charting, and exports. The next engineering increments should add a packaged JDBC driver catalog, query cancellation, optional encrypted credential storage, a schema browser, and signed release builds.
