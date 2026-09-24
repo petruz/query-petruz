@@ -1,0 +1,219 @@
+[
+  {
+    "id": "f1ef7c16-119e-4792-9217-b9ab5fa534dd",
+    "name": "Postgres",
+    "type": "FOLDER",
+    "children": [
+      {
+        "id": "c1527c34-10fa-401e-9820-6d4bd79f0c18",
+        "name": "Architecture",
+        "type": "FOLDER",
+        "children": [
+          {
+            "id": "aa692567-dcb7-4137-8a5e-58b49afdcffd",
+            "name": "Postgres",
+            "type": "QUERY",
+            "query": "SELECT\n    current_database() AS database,\n    current_user AS user_name,\n    current_setting('server_version') AS version,\n    current_setting('data_directory') AS data_directory,\n    current_setting('wal_level') AS wal_level,\n    current_setting('archive_mode') AS archive_mode,\n    current_setting('max_wal_size') AS max_wal_size,\n    current_setting('checkpoint_timeout') AS checkpoint_timeout;",
+            "children": [],
+            "comment": "Postgres information"
+          },
+          {
+            "id": "3699a965-0e75-470b-b737-1c142b8d3283",
+            "name": "Postgres files",
+            "type": "QUERY",
+            "query": "SELECT\n    name,\n    setting\nFROM pg_settings\nWHERE name IN (\n    'config_file',\n    'hba_file',\n    'ident_file',\n    'data_directory'\n);",
+            "children": []
+          },
+          {
+            "id": "52c487f3-8b45-4e3c-bb37-7bb9b9dfb891",
+            "name": "Extensions",
+            "type": "QUERY",
+            "query": "SELECT e.extname AS \"Name\", e.extversion AS \"Version\", n.nspname AS \"Schema\", c.description AS \"Description\" \nFROM pg_catalog.pg_extension e \nLEFT JOIN pg_catalog.pg_namespace n ON n.oid = e.extnamespace \nLEFT JOIN pg_catalog.pg_description c ON c.objoid = e.oid AND c.classoid = 'pg_catalog.pg_extension'::pg_catalog.regclass \nORDER BY 1;",
+            "children": []
+          },
+          {
+            "id": "852422c7-d583-4889-b1e9-bbe7d40010fd",
+            "name": "Databases",
+            "type": "QUERY",
+            "query": "SELECT\n    d.datname AS database_name,\n    pg_encoding_to_char(d.encoding) AS encoding,\n    r.rolname AS owner,\n    d.datcollate AS lc_collate,\n    d.datctype AS lc_ctype,\n    COALESCE(ts.spcname, 'pg_default') AS tablespace,\n    d.datistemplate AS is_template,\n    d.datallowconn AS allow_connections,\n    d.datconnlimit AS connection_limit,\n    pg_size_pretty(pg_database_size(d.datname)) AS size,\n    d.datfrozenxid,\n    age(d.datfrozenxid) AS xid_age\nFROM pg_database d\nJOIN pg_roles r\n    ON d.datdba = r.oid\nLEFT JOIN pg_tablespace ts\n    ON d.dattablespace = ts.oid    \nWHERE d.datname NOT IN ('postgres', 'template0', 'template1')\nORDER BY d.datname;",
+            "children": []
+          },
+          {
+            "id": "eb27ab41-3984-4346-8caf-bc6d527e2e0f",
+            "name": "Tablespaces",
+            "type": "QUERY",
+            "query": "SELECT\n    spcname AS tablespace_name,\n    pg_get_userbyid(spcowner) AS owner,\n    pg_size_pretty(pg_tablespace_size(oid)) AS size,\n    pg_tablespace_location(oid) AS location,\n    spcoptions AS options,\n    pg_tablespace_size(oid)\nFROM pg_tablespace\nORDER BY spcname;",
+            "children": [],
+            "chartConfig": {
+              "type": "bar",
+              "xColumn": 0,
+              "yColumns": [
+                5
+              ],
+              "defaultToChart": false,
+              "title": "Tablespace Size"
+            }
+          },
+          {
+            "id": "b05422a0-64bc-40b5-b0ba-88baaeb551a6",
+            "name": "Users",
+            "type": "QUERY",
+            "query": "SELECT\n    rolname AS role_name,\n    CASE WHEN rolsuper THEN 'YES' ELSE 'NO' END AS superuser,\n    CASE WHEN rolcanlogin THEN 'YES' ELSE 'NO' END AS login,\n    CASE WHEN rolcreatedb THEN 'YES' ELSE 'NO' END AS createdb,\n    CASE WHEN rolcreaterole THEN 'YES' ELSE 'NO' END AS createrole,\n    CASE WHEN rolreplication THEN 'YES' ELSE 'NO' END AS replication,\n    rolconnlimit\nFROM pg_roles\nORDER BY login desc, rolname;",
+            "children": []
+          },
+          {
+            "id": "1c52c917-f74b-42df-b35a-ce798666028f",
+            "name": "Tables",
+            "type": "QUERY",
+            "query": "SELECT\n    n.nspname AS schema_name,\n    c.relname AS table_name,\n    usr.rolname owner,\n    COALESCE(ts.spcname, 'database_default') AS tablespace,\n    pg_size_pretty(pg_relation_size(c.oid)) AS table_size,\n    pg_size_pretty(pg_indexes_size(c.oid)) AS indexes_size,\n    pg_size_pretty(pg_total_relation_size(c.oid)) AS total_size,\n    relpages pages,\n    reltuples tuples\nFROM pg_class c\nJOIN pg_namespace n\n    ON n.oid = c.relnamespace\nLEFT JOIN pg_tablespace ts\n    ON ts.oid = c.reltablespace\ninner join pg_authid usr\n    on (usr.oid = c.relowner)\nWHERE c.relkind = 'r'\n  AND n.nspname NOT IN ('pg_catalog', 'information_schema')\nORDER BY pg_total_relation_size(c.oid) DESC;",
+            "children": []
+          },
+          {
+            "id": "9805ee1a-50dc-4369-a0cd-199440ccd072",
+            "name": "Parameters changed",
+            "type": "QUERY",
+            "query": "SELECT\n    name,\n    setting || COALESCE(unit, '') AS current_value,\n    boot_val || COALESCE(unit, '') AS default_value,\n    source,\n    sourcefile,\n    pending_restart\nFROM pg_settings\nWHERE setting <> boot_val\nORDER BY name;",
+            "children": []
+          },
+          {
+            "id": "09178577-1824-4242-ac56-e9f3b5edbfe1",
+            "name": "Parameters set",
+            "type": "QUERY",
+            "query": "SELECT\n    name,\n    setting,\n    sourcefile,\n    sourceline\nFROM pg_settings\nWHERE sourcefile IS NOT NULL\nORDER BY sourcefile, sourceline;",
+            "children": []
+          },
+          {
+            "id": "919f957a-c551-4bfa-b161-f69163fa6d1d",
+            "name": "wal settings",
+            "type": "QUERY",
+            "query": "SELECT\n    name,\n    setting,\n    unit\nFROM pg_settings\nWHERE name IN (\n    'wal_level',\n    'max_wal_size',\n    'min_wal_size',\n    'checkpoint_timeout',\n    'checkpoint_completion_target',\n    'wal_buffers',\n    'archive_mode',\n    'archive_command',\n    'max_wal_senders',\n    'max_replication_slots'\n)\nORDER BY name;",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "979b56b3-8822-4f2f-a1b0-5d9c846486e7",
+        "name": "Performance",
+        "type": "FOLDER",
+        "children": [
+          {
+            "id": "1c07afdb-4153-4b82-90d1-5729a79090d1",
+            "name": "active sessions",
+            "type": "QUERY",
+            "query": "SELECT pid, age(clock_timestamp(), query_start), usename, query\nFROM pg_stat_activity\nWHERE query != '<IDLE>' AND query NOT ILIKE '%pg_stat_activity%'\nORDER BY query_start DESC;   ",
+            "children": []
+          },
+          {
+            "id": "dfad55a9-55bb-4986-a7f8-d0a899078843",
+            "name": "blocking locks",
+            "type": "QUERY",
+            "query": "SELECT\n  blocked.pid AS blocked_pid,\n  blocked.usename AS blocked_user,\n  blocked.query AS blocked_query,\n  blocking.pid AS blocking_pid,\n  blocking.usename AS blocking_user,\n  blocking.query AS blocking_query\nFROM pg_stat_activity blocked\nJOIN pg_stat_activity blocking\n  ON blocking.pid = ANY(pg_blocking_pids(blocked.pid))\nWHERE blocked.wait_event_type = 'Lock';   ",
+            "children": []
+          },
+          {
+            "id": "aa4810b5-80cc-44ab-b036-e6cf2fd0b972",
+            "name": "cache hit ratio",
+            "type": "QUERY",
+            "query": "SELECT sum(heap_blks_read) as heap_read, sum(heap_blks_hit)  as heap_hit, \ncase when sum(heap_blks_hit) = 0 then 0 else (sum(heap_blks_hit) - sum(heap_blks_read)) / sum(heap_blks_hit) end as ratio\nFROM pg_statio_user_tables;",
+            "children": []
+          },
+          {
+            "id": "c29720fd-fa1a-4aa2-b587-031ea65ed9bd",
+            "name": "cache indexes",
+            "type": "QUERY",
+            "query": "SELECT sum(idx_blks_read) as idx_read, sum(idx_blks_hit)  as idx_hit, (sum(idx_blks_hit) - sum(idx_blks_read)) / sum(idx_blks_hit) as ratio\nFROM pg_statio_user_indexes;",
+            "children": []
+          },
+          {
+            "id": "96e78aa0-85c1-4c3f-9644-302c54909aab",
+            "name": "table vacuum",
+            "type": "QUERY",
+            "query": "SELECT\n    schemaname schema,\n    relname AS table_name,\n    n_live_tup AS estimated_rows,\n    pg_size_pretty(pg_total_relation_size(relid)) AS total_size,\n    last_vacuum,\n    last_autovacuum,\n    last_analyze,\n    last_autoanalyze\nFROM pg_stat_user_tables\nORDER BY schemaname, relname;",
+            "children": []
+          },
+          {
+            "id": "c12812be-13cd-4ad1-a945-f13cf77e3988",
+            "name": "Checkpoints",
+            "type": "FOLDER",
+            "children": [
+              {
+                "id": "e40f6153-be43-42d4-a3c5-1b5987c743c4",
+                "name": "checkpoint status",
+                "type": "QUERY",
+                "query": "SELECT\n    checkpoints_timed,\n    checkpoints_req,\n    ROUND(\n        100.0 * checkpoints_req /\n        NULLIF(checkpoints_timed + checkpoints_req, 0),\n        2\n    ) AS pct_requested_checkpoints,\n    pg_size_pretty(\n        buffers_checkpoint * current_setting('block_size')::bigint\n    ) AS checkpoint_writes,\n    pg_size_pretty(\n        buffers_clean * current_setting('block_size')::bigint\n    ) AS bgwriter_writes,\n    pg_size_pretty(\n        buffers_backend * current_setting('block_size')::bigint\n    ) AS backend_writes,\n    ROUND(checkpoint_write_time / 1000.0) AS checkpoint_write_sec,\n    ROUND(checkpoint_sync_time / 1000.0) AS checkpoint_sync_sec,\n    stats_reset\nFROM pg_stat_bgwriter;\n",
+                "children": []
+              },
+              {
+                "id": "dcd99e0d-63f5-4c7c-951b-dfd07623b092",
+                "name": "frequency",
+                "type": "QUERY",
+                "query": "SELECT\n    checkpoints_timed,\n    checkpoints_req,\n    ROUND(\n        checkpoints_req::numeric /\n        NULLIF(checkpoints_timed, 0),\n        2\n    ) AS req_vs_timed_ratio\nFROM pg_stat_bgwriter;",
+                "children": [],
+                "comment": "if checkpoints_req >> checkpoints_timed means:\n\nmax_wal_size too small\nor \nhigh writing throughput\n"
+              },
+              {
+                "id": "1c70ff01-7473-445d-807f-8d092c75bfed",
+                "name": "avg time",
+                "type": "QUERY",
+                "query": "SELECT\n    ROUND(\n        checkpoint_write_time /\n        NULLIF(checkpoints_timed + checkpoints_req, 0)\n    ) AS avg_write_ms,\n    ROUND(\n        checkpoint_sync_time /\n        NULLIF(checkpoints_timed + checkpoints_req, 0)\n    ) AS avg_sync_ms\nFROM pg_stat_bgwriter;",
+                "children": [],
+                "comment": "Valori di avg_sync_ms elevati possono indicare storage lento o checkpoint troppo aggressivi"
+              },
+              {
+                "id": "14c3f73f-5103-4f6a-a7b9-0ed2c6ab8a15",
+                "name": "Writing %",
+                "type": "QUERY",
+                "query": "SELECT\n    ROUND(\n        100.0 * buffers_backend /\n        NULLIF(\n            buffers_backend +\n            buffers_checkpoint +\n            buffers_clean,\n            0\n        ),\n        2\n    ) AS backend_write_pct\nFROM pg_stat_bgwriter;",
+                "children": [],
+                "comment": "Idealmente questa percentuale dovrebbe rimanere relativamente bassa.\n\nSe è molto alta può significare:\n\n- shared_buffers piccolo;\n- background writer poco efficace;\n- carico di scrittura intenso."
+              }
+            ]
+          },
+          {
+            "id": "426063eb-6219-4563-9386-7e4888c7605c",
+            "name": "statistics",
+            "type": "FOLDER",
+            "children": [
+              {
+                "id": "c8d7b311-587f-4ed7-9d3a-30fb1fad6a14",
+                "name": "pg_stat_statements",
+                "type": "QUERY",
+                "query": "CREATE EXTENSION pg_stat_statements;",
+                "children": [],
+                "comment": "Add extension to the db"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "3c394e2a-13e3-44a3-84d9-4899aed35d92",
+        "name": "Data dictionary",
+        "type": "FOLDER",
+        "children": [
+          {
+            "id": "43fb8d49-97b9-4c06-aac4-7119bfbf313e",
+            "name": "pg_catalog",
+            "type": "QUERY",
+            "query": "select * from (\nselect 'view' \"type\", viewname \"name\" from pg_views where schemaname='pg_catalog'\nunion all \nselect 'table', tablename from pg_tables where schemaname='pg_catalog') a\norder by type, name;",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "bdf556f5-7164-45c1-97e0-d315e5ff8d58",
+        "name": "Replication",
+        "type": "FOLDER",
+        "children": [
+          {
+            "id": "6eb4ab3f-9686-4982-b512-29ad52f2190f",
+            "name": "Status",
+            "type": "QUERY",
+            "query": "SELECT\n    pid,\n    application_name,\n    client_addr,\n    state,\n    sync_state,\n    sent_lsn,\n    write_lsn,\n    flush_lsn,\n    replay_lsn\nFROM pg_stat_replication;",
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+]
