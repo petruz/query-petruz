@@ -33,7 +33,7 @@ const CartesianConfig = ({ config, setConfig, columns, yColumnsInput, setYColumn
                     className="w-full bg-modal-input-bg border border-modal-input-border rounded px-3 py-2 text-modal-input-text focus:outline-none focus:border-blue-500"
                 />
                 <p className="text-xs text-modal-text-muted mt-1">
-                    Enter column indices separated by commas (e.g., "1, 2, 3")
+                    Enter column indices separated by commas (e.g., &quot;1, 2, 3&quot;)
                 </p>
                 {errors.yColumns && (
                     <p className="text-xs text-red-400 mt-1">{errors.yColumns}</p>
@@ -76,7 +76,7 @@ const CircularConfig = ({ config, setConfig, columns, yColumnsInput, setYColumns
                     className="w-full bg-modal-input-bg border border-modal-input-border rounded px-3 py-2 text-modal-input-text focus:outline-none focus:border-blue-500"
                 />
                 <p className="text-xs text-modal-text-muted mt-1">
-                    Enter the column index for values (e.g., "1")
+                    Enter the column index for values (e.g., &quot;1&quot;)
                 </p>
                 {errors.yColumns && (
                     <p className="text-xs text-red-400 mt-1">{errors.yColumns}</p>

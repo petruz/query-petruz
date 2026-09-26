@@ -8,6 +8,8 @@ const readline = require('node:readline');
 let sidecar;
 let nextRequestId = 1;
 const pending = new Map();
+// Slightly above the sidecar's own 60s statement timeout so a stuck request always surfaces an error.
+const REQUEST_TIMEOUT_MS = Number(process.env.QUERY_PETRUZ_REQUEST_TIMEOUT_MS) || 90_000;
 
 function sidecarCommand() {
     if (!app.isPackaged) {
@@ -35,13 +37,19 @@ function startSidecar() {
         env: { ...process.env, QUERY_PETRUZ_DRIVERS_DIR: path.join(app.getPath('userData'), 'drivers') },
     });
     readline.createInterface({ input: sidecar.stdout }).on('line', (line) => {
+        let response;
         try {
-            const response = JSON.parse(line);
-            const request = pending.get(response.id);
-            if (!request) return;
-            pending.delete(response.id);
-            response.error ? request.reject(new Error(response.error)) : request.resolve(response.result);
-        } catch (_) { /* Gradle output is intentionally suppressed; ignore non-protocol output. */ }
+            response = JSON.parse(line);
+        } catch (_) {
+            // Gradle/JVM startup logs are expected on stdout in dev mode; only warn if it looks
+            // like a truncated/malformed protocol message so real issues aren't silently lost.
+            if (!app.isPackaged && line.trimStart().startsWith('{')) console.warn(`[sidecar] Failed to parse line as JSON: ${line}`);
+            return;
+        }
+        const request = pending.get(response.id);
+        if (!request) return;
+        pending.delete(response.id);
+        response.error ? request.reject(new Error(response.error)) : request.resolve(response.result);
     });
     sidecar.stderr.on('data', (data) => console.error(`[sidecar] ${data}`));
     sidecar.on('error', (error) => {
@@ -76,7 +84,14 @@ async function importJdbcDriver() {
 function invoke(method, params) {
     return new Promise((resolve, reject) => {
         const id = nextRequestId++;
-        pending.set(id, { resolve, reject });
+        const timeout = setTimeout(() => {
+            pending.delete(id);
+            reject(new Error(`Sidecar request "${method}" timed out after ${REQUEST_TIMEOUT_MS}ms.`));
+        }, REQUEST_TIMEOUT_MS);
+        pending.set(id, {
+            resolve: (result) => { clearTimeout(timeout); resolve(result); },
+            reject: (error) => { clearTimeout(timeout); reject(error); },
+        });
         sidecar.stdin.write(`${JSON.stringify({ id, method, params })}\n`);
     });
 }
@@ -88,9 +103,35 @@ function createWindow() {
         minWidth: 1000,
         minHeight: 700,
         autoHideMenuBar: true,
+        show: false,
         webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false },
     });
     window.setMenuBarVisibility(false);
+    // On some Linux window managers/compositors a freshly created window is shown but never
+    // granted real OS keyboard focus (WM "focus stealing prevention"), so keystrokes keep going
+    // to whatever app had focus before (e.g. the IDE) until the user alt-tabs away and back.
+    // Force focus repeatedly across the window lifecycle to work around this.
+    const forceFocus = () => {
+        if (window.isDestroyed()) return;
+        app.focus({ steal: true });
+        window.focus();
+        window.webContents.focus();
+    };
+    window.once('ready-to-show', () => {
+        window.show();
+        forceFocus();
+        // Some WMs only honor the focus request once the window has actually been mapped.
+        setTimeout(forceFocus, 300);
+        // As a last resort, replicate what actually fixes it manually (alt-tab away and back):
+        // briefly minimize/restore the window so the WM is forced to hand it real input focus.
+        setTimeout(() => {
+            if (window.isDestroyed()) return;
+            window.minimize();
+            window.restore();
+            forceFocus();
+        }, 600);
+    });
+    window.webContents.once('did-finish-load', forceFocus);
     const developmentUrl = process.env.ELECTRON_RENDERER_URL || 'http://localhost:5173';
     if (app.isPackaged) window.loadFile(path.join(app.getAppPath(), 'dist', 'renderer', 'index.html'));
     else window.loadURL(developmentUrl);

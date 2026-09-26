@@ -346,4 +346,6 @@ const ResultsTable = forwardRef(({ results, loading, filterText = '' }, ref) => 
     );
 });
 
+ResultsTable.displayName = 'ResultsTable';
+
 export default ResultsTable;

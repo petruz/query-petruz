@@ -193,9 +193,15 @@ const ConnectionModal = ({ onSave, onCancel, onTest, initialData }) => {
     );
     const visibleDatabaseTypes = DATABASE_TYPES.filter(database =>
         availableDrivers.some(driver => driver.databaseType === database.id && driver.available)
+        // Keep the currently selected type visible even if its driver isn't detected yet, so an existing
+        // connection being edited never loses its value while the driver list is (re)loading.
+        || database.id === formData.dbType
     );
 
     useEffect(() => {
+        // Never auto-switch the type of a connection that already exists: doing so was silently
+        // overwriting dbType/port/database while editing, right after the driver list loaded.
+        if (initialData) return;
         if (!loadingDrivers && !visibleDatabaseTypes.some(database => database.id === formData.dbType)) {
             const firstAvailableDatabase = visibleDatabaseTypes[0];
             if (firstAvailableDatabase) {
@@ -207,7 +213,7 @@ const ConnectionModal = ({ onSave, onCancel, onTest, initialData }) => {
                 }));
             }
         }
-    }, [loadingDrivers, availableDrivers]);
+    }, [loadingDrivers, availableDrivers, initialData]);
 
     return (
         <div className="fixed inset-0 bg-modal-overlay flex items-center justify-center z-50">

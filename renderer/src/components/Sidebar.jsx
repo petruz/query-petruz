@@ -41,6 +41,7 @@ const ConnectionSelector = ({ connections, activeConnectionId, onConnectionChang
         e.preventDefault();
         e.stopPropagation();
         onEditConnection(conn);
+        setIsOpen(false);
     };
 
     return (
