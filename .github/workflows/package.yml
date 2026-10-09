@@ -59,7 +59,7 @@ jobs:
         run: npm run ${{ matrix.npm_script }}
 
       - name: Upload installer
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.artifact }}
           path: ${{ matrix.paths }}
