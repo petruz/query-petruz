@@ -7,6 +7,7 @@ const rendererRoot = dirname(fileURLToPath(import.meta.url))
 const projectRoot = resolve(rendererRoot, '..')
 
 export default defineConfig({
+    base: './',
     plugins: [react()],
     root: rendererRoot,
     css: { postcss: resolve(rendererRoot, 'postcss.config.js') },

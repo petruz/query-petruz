@@ -132,6 +132,14 @@ function createWindow() {
         }, 600);
     });
     window.webContents.once('did-finish-load', forceFocus);
+    window.webContents.on('did-fail-load', (_, errorCode, errorDescription, validatedURL) => {
+        console.error(`[renderer] Failed to load ${validatedURL}: [${errorCode}] ${errorDescription}`);
+    });
+    window.webContents.on('before-input-event', (_, input) => {
+        if (input.key === 'F12' || (input.control && input.shift && input.key.toLowerCase() === 'i') || (input.meta && input.alt && input.key.toLowerCase() === 'i')) {
+            window.webContents.toggleDevTools();
+        }
+    });
     const developmentUrl = process.env.ELECTRON_RENDERER_URL || 'http://localhost:5173';
     if (app.isPackaged) window.loadFile(path.join(app.getAppPath(), 'dist', 'renderer', 'index.html'));
     else window.loadURL(developmentUrl);
