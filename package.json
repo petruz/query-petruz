@@ -55,11 +55,15 @@
         "nsis"
       ]
     },
+    "afterPack": "scripts/after-pack.cjs",
     "mac": {
       "category": "public.app-category.developer-tools",
       "target": [
         "dmg"
-      ]
+      ],
+      "extendInfo": {
+        "NSLocalNetworkUsageDescription": "Query Petruz needs access to your local network to connect to database servers."
+      }
     }
   },
   "dependencies": {

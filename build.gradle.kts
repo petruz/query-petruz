@@ -86,6 +86,14 @@ val prepareEmbeddedRuntime by tasks.registering(Exec::class) {
         "--output",
         embeddedRuntimeDir.asFile.absolutePath
     )
+    doLast {
+        if (System.getProperty("os.name").lowercase().contains("mac")) {
+            val runtimePath = embeddedRuntimeDir.asFile.absolutePath
+            project.exec {
+                commandLine("sh", "-c", "find \"$runtimePath\" \\( -name '*.dylib' -o -perm +111 -type f \\) -exec codesign --force --sign - {} + 2>/dev/null || true")
+            }
+        }
+    }
 }
 
 tasks.register<Copy>("prepareSidecarForElectron") {

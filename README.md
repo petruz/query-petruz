@@ -64,6 +64,12 @@ npm run dist:mac     # dmg, run on macOS
 
 Installer output is written to `release/`. Cross-platform packaging should be performed natively on each OS; the included GitHub Actions workflow runs a Linux, Windows, and macOS matrix and uploads the generated installers as artifacts.
 
+On macOS, the build process automatically includes `NSLocalNetworkUsageDescription` in `Info.plist` and executes an `afterPack` hook ([scripts/after-pack.cjs](file:///Users/petruz/git-repo/query-petruz/scripts/after-pack.cjs)) to unify the ad-hoc signatures of the Electron app and the embedded Java sidecar runtime, ensuring compatibility with macOS Local Network Privacy (NECP). For unsigned downloads, remove the Gatekeeper quarantine flag once after dragging to `/Applications`:
+
+```bash
+xattr -cr "/Applications/Query Petruz.app"
+```
+
 Run tests:
 
 ```bash
