@@ -1,55 +1,96 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { queryPetruzApi } from '../services/queryPetruzApi';
 
 /**
  * Custom hook to manage database connections
- * Handles connection CRUD, persistence, and file import/export
+ * Handles connection CRUD, persistence, selection, and reconnection
  */
 export function useConnections() {
     const [connections, setConnections] = useState([]);
     const [activeConnectionId, setActiveConnectionId] = useState(null);
+    const [connectionStatus, setConnectionStatus] = useState('disconnected'); // 'disconnected' | 'connecting' | 'connected' | 'error'
+    const [connectionError, setConnectionError] = useState(null);
 
-    // Load connections from localStorage on mount
+    const connectToDatabase = useCallback(async (connection) => {
+        if (!connection) return false;
+        setConnectionStatus('connecting');
+        setConnectionError(null);
+        try {
+            await queryPetruzApi.connect(connection);
+            setConnectionStatus('connected');
+            setConnectionError(null);
+            return true;
+        } catch (err) {
+            console.error('Connection failed:', err);
+            const errorMessage = err.response?.data?.error || err.message;
+            setConnectionStatus('error');
+            setConnectionError(errorMessage);
+            alert(`Failed to connect to ${connection.name}: ${errorMessage}`);
+            return false;
+        }
+    }, []);
+
+    // Load connections from localStorage on mount and connect to saved active connection
     useEffect(() => {
         const savedConnections = localStorage.getItem('qm_connections');
         const savedActiveId = localStorage.getItem('qm_active_connection_id');
 
         if (savedConnections) {
-            const loadedConnections = JSON.parse(savedConnections);
-            setConnections(loadedConnections);
-        }
-        if (savedActiveId) {
-            setActiveConnectionId(savedActiveId);
-        }
-    }, []);
-
-    // Auto-connect when activeConnectionId changes
-    useEffect(() => {
-        if (activeConnectionId && connections.length > 0) {
-            const conn = connections.find(c => c.id === activeConnectionId);
-            if (conn) {
-                connectToDatabase(conn);
-                localStorage.setItem('qm_active_connection_id', activeConnectionId);
+            try {
+                const loadedConnections = JSON.parse(savedConnections);
+                setConnections(loadedConnections);
+                if (savedActiveId) {
+                    setActiveConnectionId(savedActiveId);
+                    const conn = loadedConnections.find(c => c.id === savedActiveId);
+                    if (conn) {
+                        connectToDatabase(conn);
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to parse saved connections from localStorage', e);
             }
         }
-    }, [activeConnectionId, connections]);
+    }, [connectToDatabase]);
 
-    const connectToDatabase = async (connection) => {
-        try {
-            await queryPetruzApi.connect(connection);
-        } catch (err) {
-            console.error('Connection failed:', err);
-            alert(`Failed to connect to ${connection.name}: ${err.response?.data?.error || err.message}`);
+    // Select and connect/reconnect to a connection (even if already selected)
+    const selectConnection = useCallback(async (id, connectionsList = connections) => {
+        setActiveConnectionId(id);
+        if (id) {
+            localStorage.setItem('qm_active_connection_id', id);
+            const conn = connectionsList.find(c => c.id === id);
+            if (conn) {
+                return await connectToDatabase(conn);
+            }
+        } else {
+            localStorage.removeItem('qm_active_connection_id');
+            setConnectionStatus('disconnected');
         }
-    };
+        return false;
+    }, [connections, connectToDatabase]);
+
+    // Reconnect to the active connection
+    const reconnect = useCallback(async () => {
+        if (activeConnectionId) {
+            const conn = connections.find(c => c.id === activeConnectionId);
+            if (conn) {
+                return await connectToDatabase(conn);
+            }
+        }
+        return false;
+    }, [activeConnectionId, connections, connectToDatabase]);
+
+    const markDisconnected = useCallback((errorMsg = null) => {
+        setConnectionStatus('error');
+        if (errorMsg) setConnectionError(errorMsg);
+    }, []);
 
     const handleSaveConnection = async (formData) => {
         const newConn = { ...formData, id: uuidv4() };
         const newConnections = [...connections, newConn];
         setConnections(newConnections);
         localStorage.setItem('qm_connections', JSON.stringify(newConnections));
-        setActiveConnectionId(newConn.id); // Auto-select new connection
+        await selectConnection(newConn.id, newConnections);
         return newConn.id;
     };
 
@@ -64,7 +105,7 @@ export function useConnections() {
         if (id === activeConnectionId) {
             const updatedConn = updatedConnections.find(c => c.id === id);
             if (updatedConn) {
-                connectToDatabase(updatedConn);
+                await connectToDatabase(updatedConn);
             }
         }
     };
@@ -82,6 +123,7 @@ export function useConnections() {
             if (activeConnectionId === id) {
                 setActiveConnectionId(null);
                 localStorage.removeItem('qm_active_connection_id');
+                setConnectionStatus('disconnected');
             }
         }
     };
@@ -118,13 +160,15 @@ export function useConnections() {
         input.onchange = (e) => {
             const file = e.target.files[0];
             const reader = new FileReader();
-            reader.onload = (event) => {
+            reader.onload = async (event) => {
                 try {
                     const json = JSON.parse(event.target.result);
                     const loadedConnections = json;
                     setConnections(loadedConnections);
                     localStorage.setItem('qm_connections', JSON.stringify(loadedConnections));
-                    if (loadedConnections.length > 0) setActiveConnectionId(loadedConnections[0].id);
+                    if (loadedConnections.length > 0) {
+                        await selectConnection(loadedConnections[0].id, loadedConnections);
+                    }
                 } catch (err) {
                     alert("Failed to load connections: Invalid JSON");
                 }
@@ -138,6 +182,11 @@ export function useConnections() {
         connections,
         activeConnectionId,
         setActiveConnectionId,
+        selectConnection,
+        reconnect,
+        connectionStatus,
+        connectionError,
+        markDisconnected,
         handleSaveConnection,
         handleEditConnection,
         handleTestConnection,

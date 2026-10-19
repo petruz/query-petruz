@@ -27,7 +27,12 @@ class JdbcSession {
             rewriteJdbcUrl(profile.jdbcUrl, tunnel.localPort)
         } ?: profile.jdbcUrl
         val properties = Properties().apply { put("user", profile.username); put("password", secrets.databasePassword) }
-        connection = DriverManager.getConnection(jdbcUrl, properties)
+        try {
+            connection = DriverManager.getConnection(jdbcUrl, properties)
+        } catch (e: Exception) {
+            closeLocked()
+            throw e
+        }
     }
 
     fun test(profile: ConnectionProfile, secrets: ConnectionSecrets, driverClassName: String? = null) = lock.withLock {
@@ -39,7 +44,7 @@ class JdbcSession {
             try {
                 DriverManager.getConnection(rewriteJdbcUrl(profile.jdbcUrl, tunnel.localPort), properties).use { }
             } finally {
-                tunnel.session.disconnect()
+                runCatching { tunnel.session.disconnect() }
             }
         }
     }
@@ -82,9 +87,9 @@ class JdbcSession {
         Regex("^(jdbc:[^:]+://)([^/:]+)(?::\\d+)?(/.*)$").replace(url) { "${it.groupValues[1]}127.0.0.1:$port${it.groupValues[3]}" }
 
     private fun closeLocked() {
-        connection?.close()
+        runCatching { connection?.close() }
         connection = null
-        sshSession?.disconnect()
+        runCatching { sshSession?.disconnect() }
         sshSession = null
     }
 }

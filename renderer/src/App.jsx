@@ -31,7 +31,7 @@ function App() {
     const modals = useModals();
     const connections = useConnections();
     const queryTree = useQueryTree();
-    const queryExecution = useQueryExecution(queryTree.selectedQuery);
+    const queryExecution = useQueryExecution(queryTree.selectedQuery, connections.markDisconnected);
 
     // Connection editing state
     const [editingConnection, setEditingConnection] = React.useState(null);
@@ -70,6 +70,17 @@ function App() {
     const handleEditConnection = (connection) => {
         setEditingConnection(connection);
         modals.setConnectionModal(true);
+    };
+
+    // Handle connection select or reconnect
+    const handleConnectionChange = async (id) => {
+        queryExecution.setError(null);
+        await connections.selectConnection(id);
+    };
+
+    const handleReconnect = async () => {
+        queryExecution.setError(null);
+        await connections.reconnect();
     };
 
     // Handle chart config
@@ -134,9 +145,11 @@ function App() {
                                 onContextMenu={modals.handleNodeContextMenu}
                                 connections={connections.connections}
                                 activeConnectionId={connections.activeConnectionId}
-                                onConnectionChange={connections.setActiveConnectionId}
+                                onConnectionChange={handleConnectionChange}
                                 onDeleteConnection={connections.handleDeleteConnection}
                                 onEditConnection={handleEditConnection}
+                                connectionStatus={connections.connectionStatus}
+                                onReconnect={handleReconnect}
                             />
                         </div>
 

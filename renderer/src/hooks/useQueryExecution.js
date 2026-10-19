@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react';
-import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { extractSqlComments } from '../utils/commentExtractor';
 import { queryPetruzApi } from '../services/queryPetruzApi';
@@ -8,7 +7,7 @@ import { queryPetruzApi } from '../services/queryPetruzApi';
  * Custom hook to manage SQL query execution and results
  * Handles SQL state, execution, results, filtering, and exports
  */
-export function useQueryExecution(selectedQuery) {
+export function useQueryExecution(_selectedQuery, onConnectionError) {
     const [sql, setSql] = useState('');
     const [queryComments, setQueryComments] = useState('');
     const [results, setResults] = useState(null);
@@ -37,6 +36,18 @@ export function useQueryExecution(selectedQuery) {
         }
     };
 
+    const isConnectionError = (msg) => {
+        if (!msg || typeof msg !== 'string') return false;
+        const lower = msg.toLowerCase();
+        return lower.includes('connection') ||
+            lower.includes('connect to a database') ||
+            lower.includes('socket') ||
+            lower.includes('broken pipe') ||
+            lower.includes('reset') ||
+            lower.includes('closed') ||
+            lower.includes('timeout');
+    };
+
     const handleExecute = async () => {
         setLoading(true);
         setError(null);
@@ -47,9 +58,15 @@ export function useQueryExecution(selectedQuery) {
             } else {
                 setError(response.error);
                 setResults(null);
+                if (isConnectionError(response.error)) {
+                    onConnectionError?.(response.error);
+                }
             }
         } catch (err) {
             setError(err.message);
+            if (isConnectionError(err.message)) {
+                onConnectionError?.(err.message);
+            }
         } finally {
             setLoading(false);
         }
@@ -99,6 +116,7 @@ export function useQueryExecution(selectedQuery) {
         results,
         loading,
         error,
+        setError,
         filterText,
         setFilterText,
         viewMode,

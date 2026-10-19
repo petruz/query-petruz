@@ -1,10 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronRight, ChevronDown, Folder, FileText, Trash2, Database } from 'lucide-react';
+import { ChevronRight, ChevronDown, Folder, FileText, Trash2, Database, RefreshCw } from 'lucide-react';
 import clsx from 'clsx';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-const ConnectionSelector = ({ connections, activeConnectionId, onConnectionChange, onDeleteConnection, onEditConnection }) => {
+const ConnectionSelector = ({
+    connections,
+    activeConnectionId,
+    onConnectionChange,
+    onDeleteConnection,
+    onEditConnection,
+    connectionStatus,
+    onReconnect
+}) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
 
@@ -46,18 +54,51 @@ const ConnectionSelector = ({ connections, activeConnectionId, onConnectionChang
 
     return (
         <div className="relative" ref={dropdownRef}>
-            <button
-                className="w-full flex items-center justify-between bg-tree-bg border border-tree-border text-tree-text text-sm rounded px-2 py-1.5 hover:bg-tree-item-hover transition-colors focus:outline-none focus:border-tree-item-selected-text"
-                onClick={() => setIsOpen(!isOpen)}
-            >
-                <div className="flex items-center gap-2 truncate">
-                    <Database size={14} className="text-tree-text-muted" />
-                    <span className="truncate">
-                        {activeConnection ? activeConnection.name : 'Select Connection'}
-                    </span>
-                </div>
-                <ChevronDown size={14} className="text-tree-text-muted" />
-            </button>
+            <div className="flex items-center gap-1 w-full">
+                <button
+                    className="flex-1 min-w-0 flex items-center justify-between bg-tree-bg border border-tree-border text-tree-text text-sm rounded px-2 py-1.5 hover:bg-tree-item-hover transition-colors focus:outline-none focus:border-tree-item-selected-text"
+                    onClick={() => setIsOpen(!isOpen)}
+                >
+                    <div className="flex items-center gap-2 truncate min-w-0">
+                        <Database
+                            size={14}
+                            className={clsx(
+                                "flex-shrink-0",
+                                connectionStatus === 'connected' ? "text-emerald-400" :
+                                connectionStatus === 'connecting' ? "text-amber-400 animate-pulse" :
+                                connectionStatus === 'error' ? "text-rose-400" :
+                                "text-tree-text-muted"
+                            )}
+                        />
+                        <span className="truncate">
+                            {activeConnection ? activeConnection.name : 'Select Connection'}
+                        </span>
+                        {connectionStatus === 'error' && (
+                            <span className="text-[10px] text-rose-400 font-medium flex-shrink-0">(disconnected)</span>
+                        )}
+                        {connectionStatus === 'connecting' && (
+                            <span className="text-[10px] text-amber-400 font-medium flex-shrink-0 animate-pulse">(connecting...)</span>
+                        )}
+                    </div>
+                    <ChevronDown size={14} className="text-tree-text-muted flex-shrink-0 ml-1" />
+                </button>
+                {activeConnection && (
+                    <button
+                        className={clsx(
+                            "p-1.5 bg-tree-bg border border-tree-border rounded hover:bg-tree-item-hover text-tree-text-muted hover:text-tree-text transition-colors flex-shrink-0",
+                            connectionStatus === 'connecting' && "animate-spin text-amber-400"
+                        )}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (onReconnect) onReconnect();
+                            else onConnectionChange(activeConnection.id);
+                        }}
+                        title="Reconnect to database"
+                    >
+                        <RefreshCw size={14} />
+                    </button>
+                )}
+            </div>
 
             {isOpen && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-tree-bg border border-tree-border rounded shadow-lg z-50 max-h-60 overflow-y-auto">
@@ -75,11 +116,27 @@ const ConnectionSelector = ({ connections, activeConnectionId, onConnectionChang
                                 )}
                                 onClick={() => handleSelect(conn.id)}
                                 onContextMenu={(e) => handleContextMenu(e, conn)}
-                                title="Right-click to edit"
+                                title={conn.id === activeConnectionId ? "Click to reconnect. Right-click to edit" : "Click to connect. Right-click to edit"}
                             >
                                 <div className="flex items-center gap-2 truncate">
-                                    <Database size={14} className={conn.id === activeConnectionId ? "text-tree-item-selected-text" : "text-tree-text-muted"} />
+                                    <Database
+                                        size={14}
+                                        className={clsx(
+                                            conn.id === activeConnectionId
+                                                ? (connectionStatus === 'connected' ? "text-emerald-400" :
+                                                   connectionStatus === 'connecting' ? "text-amber-400 animate-pulse" :
+                                                   connectionStatus === 'error' ? "text-rose-400" :
+                                                   "text-tree-item-selected-text")
+                                                : "text-tree-text-muted"
+                                        )}
+                                    />
                                     <span className="truncate">{conn.name}</span>
+                                    {conn.id === activeConnectionId && connectionStatus === 'connected' && (
+                                        <span className="text-[10px] text-emerald-400 font-medium">●</span>
+                                    )}
+                                    {conn.id === activeConnectionId && connectionStatus === 'error' && (
+                                        <span className="text-[10px] text-rose-400 font-medium">disconnected</span>
+                                    )}
                                 </div>
                                 <div className="flex gap-1">
                                     <button
@@ -202,7 +259,19 @@ const SortableTreeNode = ({ node, onSelect, selectedId, onContextMenu, level = 0
     );
 };
 
-const Sidebar = ({ nodes, onSelect, selectedId, onContextMenu, connections, activeConnectionId, onConnectionChange, onDeleteConnection, onEditConnection }) => {
+const Sidebar = ({
+    nodes,
+    onSelect,
+    selectedId,
+    onContextMenu,
+    connections,
+    activeConnectionId,
+    onConnectionChange,
+    onDeleteConnection,
+    onEditConnection,
+    connectionStatus,
+    onReconnect
+}) => {
     return (
         <div className="flex flex-col h-full">
             {/* Connection Selector */}
@@ -213,6 +282,8 @@ const Sidebar = ({ nodes, onSelect, selectedId, onContextMenu, connections, acti
                     onConnectionChange={onConnectionChange}
                     onDeleteConnection={onDeleteConnection}
                     onEditConnection={onEditConnection}
+                    connectionStatus={connectionStatus}
+                    onReconnect={onReconnect}
                 />
             </div>
 
