@@ -11,7 +11,7 @@ import ConnectionModal from './components/ConnectionModal';
 import AboutModal from './components/AboutModal';
 import ChartConfigModal from './components/ChartConfigModal';
 import ChartView from './components/ChartView';
-import { Play, ChevronDown, ChevronRight, Save, Search, BarChart3, Table } from 'lucide-react';
+import { Play, ChevronDown, ChevronRight, Save, Search, BarChart3, Table, MessageSquare } from 'lucide-react';
 import { DndContext, DragOverlay } from '@dnd-kit/core';
 import { useTheme } from './context/ThemeContext';
 import { useLayout } from './hooks/useLayout';
@@ -20,7 +20,7 @@ import { useConnections } from './hooks/useConnections';
 import { useQueryExecution } from './hooks/useQueryExecution';
 import { useQueryTree } from './hooks/useQueryTree';
 import { queryPetruzApi } from './services/queryPetruzApi';
-import ReactMarkdown from 'react-markdown';
+import MarkdownComment from './components/MarkdownComment';
 
 function App() {
     // Theme
@@ -176,19 +176,26 @@ function App() {
                                     >
                                         {layout.isEditorVisible ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                                     </button>
-                                    <span
-                                        className="text-sm text-editor-header-text font-bold truncate relative"
-                                        title={headerComment || undefined}
+                                    <div
+                                        className="relative inline-flex items-center gap-1.5 cursor-default group"
                                         onMouseEnter={() => setIsCommentPreviewVisible(Boolean(headerComment))}
                                         onMouseLeave={() => setIsCommentPreviewVisible(false)}
                                     >
-                                        {queryTree.selectedQuery ? queryTree.selectedQuery.name : 'Select a query'}
-                                        {isCommentPreviewVisible && (
-                                            <span className="absolute left-0 top-full mt-2 w-96 max-w-[70vw] bg-gray-900 text-white text-xs rounded py-2 px-3 z-50 shadow-lg whitespace-normal pointer-events-none">
-                                                <ReactMarkdown>{headerComment}</ReactMarkdown>
-                                            </span>
+                                        <span className="text-sm text-editor-header-text font-bold truncate max-w-[320px]">
+                                            {queryTree.selectedQuery ? queryTree.selectedQuery.name : 'Select a query'}
+                                        </span>
+                                        {Boolean(headerComment) && (
+                                            <MessageSquare size={13} className="text-blue-400 opacity-80 group-hover:opacity-100 flex-shrink-0" />
                                         )}
-                                    </span>
+                                        {isCommentPreviewVisible && headerComment && (
+                                            <div className="absolute left-0 top-full mt-2 w-96 max-w-[80vw] bg-gray-900 border border-gray-700 text-white text-xs rounded-lg py-2.5 px-3.5 z-50 shadow-2xl pointer-events-none">
+                                                <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5 pb-1 border-b border-gray-800 flex items-center justify-between">
+                                                    <span>Query Comment</span>
+                                                </div>
+                                                <MarkdownComment content={headerComment} />
+                                            </div>
+                                        )}
+                                    </div>
                                     {queryTree.selectedQuery && queryExecution.sql !== (queryTree.selectedQuery.query || '') && (
                                         <button
                                             onClick={handleSaveQuery}
