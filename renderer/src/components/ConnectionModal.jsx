@@ -40,10 +40,25 @@ const DATABASE_TYPES = [
     },
 ];
 
+const getJdbcUrl = (data, dbConfig) => {
+    if (!dbConfig) return '';
+    let template = dbConfig.urlTemplate;
+    if (data.dbType === 'oracle') {
+        template = data.oracleType === 'service_name'
+            ? 'jdbc:oracle:thin:@//{host}:{port}/{db}'
+            : 'jdbc:oracle:thin:@{host}:{port}:{db}';
+    }
+    return template
+        .replace('{host}', data.host || '')
+        .replace('{port}', data.port || '')
+        .replace('{db}', data.database || '');
+};
+
 const ConnectionModal = ({ onSave, onCancel, onTest, initialData }) => {
     const [formData, setFormData] = useState({
         name: '',
         dbType: 'postgresql',
+        oracleType: 'sid',
         host: 'localhost',
         port: '5432',
         database: 'postgres',
@@ -86,9 +101,19 @@ const ConnectionModal = ({ onSave, onCancel, onTest, initialData }) => {
 
     useEffect(() => {
         if (initialData) {
+            let detectedOracleType = initialData.oracleType;
+            if (!detectedOracleType && initialData.dbType === 'oracle') {
+                if (initialData.url && initialData.url.includes('@//')) {
+                    detectedOracleType = 'service_name';
+                } else {
+                    detectedOracleType = 'sid';
+                }
+            }
+
             setFormData({
                 ...initialData,
                 dbType: initialData.dbType || 'postgresql',
+                oracleType: detectedOracleType || 'sid',
                 host: initialData.host || 'localhost',
                 port: initialData.port || '5432',
                 database: initialData.database || 'postgres',
@@ -112,6 +137,7 @@ const ConnectionModal = ({ onSave, onCancel, onTest, initialData }) => {
             setFormData({
                 ...formData,
                 dbType: value,
+                oracleType: value === 'oracle' ? (formData.oracleType || 'sid') : 'sid',
                 port: dbConfig.defaultPort.toString(),
                 database: dbConfig.defaultDb
             });
@@ -127,10 +153,7 @@ const ConnectionModal = ({ onSave, onCancel, onTest, initialData }) => {
             return null;
         }
 
-        const url = dbConfig.urlTemplate
-            .replace('{host}', formData.host)
-            .replace('{port}', formData.port)
-            .replace('{db}', formData.database);
+        const url = getJdbcUrl(formData, dbConfig);
 
         return {
             name: formData.name,
@@ -140,6 +163,7 @@ const ConnectionModal = ({ onSave, onCancel, onTest, initialData }) => {
             driverClassName: dbConfig.driverClass,
             // Store these for future edits
             dbType: formData.dbType,
+            oracleType: formData.dbType === 'oracle' ? (formData.oracleType || 'sid') : undefined,
             host: formData.host,
             port: formData.port,
             database: formData.database,
@@ -309,14 +333,39 @@ const ConnectionModal = ({ onSave, onCancel, onTest, initialData }) => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-modal-text-muted mb-1">Database</label>
-                                    <input
-                                        name="database"
-                                        value={formData.database}
-                                        onChange={handleChange}
-                                        className="w-full bg-modal-input-bg border border-modal-input-border rounded px-3 py-2 text-modal-input-text focus:outline-none focus:border-blue-500"
-                                        placeholder={selectedDb?.defaultDb}
-                                    />
+                                    <label className="block text-sm font-medium text-modal-text-muted mb-1">
+                                        {formData.dbType === 'oracle'
+                                            ? (formData.oracleType === 'service_name' ? 'Service Name' : 'SID')
+                                            : 'Database'}
+                                    </label>
+                                    {formData.dbType === 'oracle' ? (
+                                        <div className="flex gap-2">
+                                            <input
+                                                name="database"
+                                                value={formData.database}
+                                                onChange={handleChange}
+                                                className="flex-1 min-w-0 bg-modal-input-bg border border-modal-input-border rounded px-3 py-2 text-modal-input-text focus:outline-none focus:border-blue-500"
+                                                placeholder={formData.oracleType === 'service_name' ? 'ORCLPDB1' : (selectedDb?.defaultDb || 'ORCL')}
+                                            />
+                                            <select
+                                                name="oracleType"
+                                                value={formData.oracleType || 'sid'}
+                                                onChange={handleChange}
+                                                className="w-36 bg-modal-input-bg border border-modal-input-border rounded px-2 py-2 text-modal-input-text focus:outline-none focus:border-blue-500 text-sm"
+                                            >
+                                                <option value="sid">SID</option>
+                                                <option value="service_name">Service Name</option>
+                                            </select>
+                                        </div>
+                                    ) : (
+                                        <input
+                                            name="database"
+                                            value={formData.database}
+                                            onChange={handleChange}
+                                            className="w-full bg-modal-input-bg border border-modal-input-border rounded px-3 py-2 text-modal-input-text focus:outline-none focus:border-blue-500"
+                                            placeholder={selectedDb?.defaultDb}
+                                        />
+                                    )}
                                 </div>
 
                                 <div>
@@ -342,11 +391,7 @@ const ConnectionModal = ({ onSave, onCancel, onTest, initialData }) => {
                                 {selectedDb && (
                                     <div className="text-xs text-modal-text-muted bg-modal-input-bg p-2 rounded">
                                         <div><strong>Driver:</strong> {selectedDb.driverClass}</div>
-                                        <div><strong>URL:</strong> {selectedDb.urlTemplate
-                                            .replace('{host}', formData.host)
-                                            .replace('{port}', formData.port)
-                                            .replace('{db}', formData.database)}
-                                        </div>
+                                        <div><strong>URL:</strong> {getJdbcUrl(formData, selectedDb)}</div>
                                     </div>
                                 )}
                             </>

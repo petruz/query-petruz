@@ -9,6 +9,7 @@ export function useModals() {
     const [modal, setModal] = useState(null); // { type: 'RENAME'|'ADD_FOLDER'|'ADD_QUERY', node?, parentNode? }
     const [connectionModal, setConnectionModal] = useState(false);
     const [aboutModal, setAboutModal] = useState(false);
+    const [settingsModal, setSettingsModal] = useState(false);
 
     const handleNodeContextMenu = (e, node) => {
         e.preventDefault();
@@ -24,6 +25,8 @@ export function useModals() {
         setConnectionModal,
         aboutModal,
         setAboutModal,
+        settingsModal,
+        setSettingsModal,
         handleNodeContextMenu,
     };
 }

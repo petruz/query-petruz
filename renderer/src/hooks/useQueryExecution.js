@@ -72,9 +72,15 @@ export function useQueryExecution(_selectedQuery, onConnectionError) {
         }
     };
 
-    const handleExportCSV = () => resultsTableRef.current?.exportToCSV();
-    const handleExportExcel = () => resultsTableRef.current?.exportToExcel();
-    const handleExportPDF = () => resultsTableRef.current?.exportToPDF();
+    const handleExportCSV = (queryName) => resultsTableRef.current?.exportToCSV(queryName);
+    const handleExportExcel = (queryName) => resultsTableRef.current?.exportToExcel(queryName);
+    const handleExportPDF = (queryName) => resultsTableRef.current?.exportToPDF(queryName);
+
+    const sanitizeChartFilename = (name) => {
+        if (!name || typeof name !== 'string') return 'chart';
+        const cleaned = name.trim().replace(/[\\/:*?"<>|]+/g, '_');
+        return cleaned || 'chart';
+    };
 
     const handleExportChartImage = async (queryName = 'chart') => {
         if (!chartViewRef.current) return;
@@ -83,11 +89,13 @@ export function useQueryExecution(_selectedQuery, onConnectionError) {
         const canvas = chartViewRef.current.querySelector('canvas');
         if (!canvas) return;
 
+        const baseName = sanitizeChartFilename(queryName);
+
         // Create a link to download the image
         const url = canvas.toDataURL('image/png');
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${queryName}.png`;
+        a.download = `${baseName}.png`;
         a.click();
     };
 
@@ -97,6 +105,7 @@ export function useQueryExecution(_selectedQuery, onConnectionError) {
         const canvas = chartViewRef.current.querySelector('canvas');
         if (!canvas) return;
 
+        const baseName = sanitizeChartFilename(queryName);
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF('landscape');
 
@@ -105,7 +114,7 @@ export function useQueryExecution(_selectedQuery, onConnectionError) {
         const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
         pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save(`${queryName}.pdf`);
+        pdf.save(`${baseName}.pdf`);
     };
 
     return {

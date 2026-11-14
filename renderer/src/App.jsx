@@ -9,6 +9,7 @@ import InputModal from './components/InputModal';
 import CommentModal from './components/CommentModal';
 import ConnectionModal from './components/ConnectionModal';
 import AboutModal from './components/AboutModal';
+import SettingsModal from './components/SettingsModal';
 import ChartConfigModal from './components/ChartConfigModal';
 import ChartView from './components/ChartView';
 import { Play, ChevronDown, ChevronRight, Save, Search, BarChart3, Table, MessageSquare } from 'lucide-react';
@@ -39,7 +40,31 @@ function App() {
     const [chartConfigModal, setChartConfigModal] = React.useState(false);
     const [commentModalQuery, setCommentModalQuery] = React.useState(null);
     const [isCommentPreviewVisible, setIsCommentPreviewVisible] = React.useState(false);
+    const [settings, setSettings] = React.useState(() => {
+        return {
+            normalizeExportFileName: localStorage.getItem('qm_normalize_export_filename') === 'true',
+        };
+    });
     const headerComment = queryTree.selectedQuery?.comment || queryExecution.queryComments;
+
+    const handleUpdateSettings = (newSettings) => {
+        setSettings((prev) => {
+            const updated = { ...prev, ...newSettings };
+            if (newSettings.normalizeExportFileName !== undefined) {
+                localStorage.setItem('qm_normalize_export_filename', String(newSettings.normalizeExportFileName));
+            }
+            return updated;
+        });
+    };
+
+    const getExportFileName = () => {
+        const rawName = queryTree.selectedQuery?.name || '';
+        if (!rawName.trim()) return 'query-results';
+        if (settings.normalizeExportFileName) {
+            return rawName.trim().replace(/\s+/g, '_').toLowerCase();
+        }
+        return rawName.trim();
+    };
 
     // Update SQL when selected query changes
     useEffect(() => {
@@ -120,6 +145,7 @@ function App() {
                     onLoadConnections={connections.handleLoadConnectionsFromFile}
                     onSaveConnections={connections.handleSaveConnectionsToFile}
                     onAbout={() => modals.setAboutModal(true)}
+                    onOpenSettings={() => modals.setSettingsModal(true)}
                     currentTheme={theme}
                     availableThemes={availableThemes}
                     onThemeChange={switchTheme}
@@ -277,6 +303,7 @@ function App() {
                                         results={queryExecution.results}
                                         loading={queryExecution.loading}
                                         filterText={queryExecution.filterText}
+                                        queryName={getExportFileName()}
                                     />
                                 )}
                             </div>
@@ -294,11 +321,11 @@ function App() {
                                 <StatusFooter
                                     executionTime={queryExecution.results?.executionTimeMs}
                                     rowCount={queryExecution.results?.rows?.length}
-                                    onExportCSV={queryExecution.handleExportCSV}
-                                    onExportExcel={queryExecution.handleExportExcel}
-                                    onExportPDF={queryExecution.handleExportPDF}
-                                    onExportChartImage={queryExecution.handleExportChartImage}
-                                    onExportChartPDF={queryExecution.handleExportChartPDF}
+                                    onExportCSV={() => queryExecution.handleExportCSV(getExportFileName())}
+                                    onExportExcel={() => queryExecution.handleExportExcel(getExportFileName())}
+                                    onExportPDF={() => queryExecution.handleExportPDF(getExportFileName())}
+                                    onExportChartImage={() => queryExecution.handleExportChartImage(getExportFileName())}
+                                    onExportChartPDF={() => queryExecution.handleExportChartPDF(getExportFileName())}
                                     hasResults={!!queryExecution.results && queryExecution.results.rows && queryExecution.results.rows.length > 0}
                                     viewMode={queryExecution.viewMode}
                                 />
@@ -383,6 +410,14 @@ function App() {
 
                 {modals.aboutModal && (
                     <AboutModal onClose={() => modals.setAboutModal(false)} />
+                )}
+
+                {modals.settingsModal && (
+                    <SettingsModal
+                        settings={settings}
+                        onUpdateSettings={handleUpdateSettings}
+                        onClose={() => modals.setSettingsModal(false)}
+                    />
                 )}
 
                 {chartConfigModal && queryTree.selectedQuery && (

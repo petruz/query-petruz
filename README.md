@@ -1,6 +1,6 @@
 # Query Petruz
 
-Query Petruz is a single-user desktop client for DBA database troubleshooting. It uses an Electron/React user interface derived from Query Mole and a private Kotlin/JDBC sidecar. The renderer communicates with that sidecar over standard input/output only: there is no HTTP server, browser-exposed endpoint, or local API port.
+Query Petruz is a single-user desktop client for DBA database troubleshooting. It uses an Electron/React user interface derived from Query Petruz and a private Kotlin/JDBC sidecar. The renderer communicates with that sidecar over standard input/output only: there is no HTTP server, browser-exposed endpoint, or local API port.
 
 ## Capabilities
 
@@ -124,4 +124,4 @@ This tool assumes the active user is a DBA and intentionally permits destructive
 
 ## Current scope
 
-The initial Electron UI retains the Query Mole navigation tree, query editor, result views, charting, and exports. The next engineering increments should add a packaged JDBC driver catalog, query cancellation, optional encrypted credential storage, a schema browser, and signed release builds.
+The initial Electron UI retains the Query Petruz navigation tree, query editor, result views, charting, and exports. The next engineering increments should add a packaged JDBC driver catalog, query cancellation, optional encrypted credential storage, a schema browser, and signed release builds.

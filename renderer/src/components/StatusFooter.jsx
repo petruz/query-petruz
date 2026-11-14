@@ -10,7 +10,7 @@ const StatusFooter = ({
     onExportChartImage,
     onExportChartPDF,
     hasResults,
-    viewMode = 'grid'
+    viewMode = 'grid',
 }) => {
     return (
         <div className="flex items-center justify-between px-4 py-1 text-xs text-[var(--footer-text)] bg-[var(--footer-bg)] border-t border-[var(--footer-border)] h-full select-none">
