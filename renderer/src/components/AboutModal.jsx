@@ -4,7 +4,7 @@ const AboutModal = ({ onClose }) => {
     return (
         <div className="fixed inset-0 bg-modal-overlay flex items-center justify-center z-50">
             <div className="bg-modal-bg border border-modal-border rounded-lg shadow-xl w-96 p-6">
-                <h2 className="text-2xl font-bold text-modal-text mb-4 text-center">Query Mole</h2>
+                <h2 className="text-2xl font-bold text-modal-text mb-4 text-center">Query Petruz</h2>
 
                 <div className="space-y-3 text-modal-text-secondary text-sm">
                     <div className="text-center">
@@ -35,12 +35,12 @@ const AboutModal = ({ onClose }) => {
                     <div className="border-t border-modal-border pt-3">
                         <div className="text-center">
                             <a
-                                href="https://github.com/petruz/query-mole"
+                                href="https://github.com/petruz/query-petruz"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-modal-link hover:text-modal-link-hover text-xs"
                             >
-                                github.com/petruz/query-mole
+                                github.com/petruz/query-petruz
                             </a>
                         </div>
                     </div>

@@ -1,6 +1,6 @@
 # Query Petruz
 
-Query Petruz is a single-user desktop client for DBA database troubleshooting. It uses an Electron/React user interface derived from Query Mole and a private Kotlin/JDBC sidecar. The renderer communicates with that sidecar over standard input/output only: there is no HTTP server, browser-exposed endpoint, or local API port.
+Query Petruz is a single-user desktop client for DBA database troubleshooting. It uses an Electron/React user interface derived from Query Petruz and a private Kotlin/JDBC sidecar. The renderer communicates with that sidecar over standard input/output only: there is no HTTP server, browser-exposed endpoint, or local API port.
 
 ## Capabilities
 
@@ -58,7 +58,7 @@ Create platform-specific installers:
 
 ```bash
 npm run dist:linux   # AppImage and deb, run on Linux
-npm run dist:win     # NSIS exe, run on Windows
+npm run dist:win     # NSIS installer and portable exe, run on Windows
 npm run dist:mac     # dmg, run on macOS
 ```
 
@@ -78,7 +78,7 @@ npm run test:sidecar
 
 This command also uses the Gradle Wrapper internally.
 
-The packaging workflow is defined in `.github/workflows/package.yml`. It builds native installers on each operating system using GitHub Actions: Linux produces `.AppImage` and `.deb`, Windows produces an NSIS `.exe`, and macOS produces a `.dmg`.
+The packaging workflow is defined in `.github/workflows/package.yml`. It builds native installers on each operating system using GitHub Actions: Linux produces `.AppImage` and `.deb`, Windows produces an NSIS installer `.exe` and a portable `.exe`, and macOS produces a `.dmg`.
 
 ## Basic use
 
@@ -124,4 +124,4 @@ This tool assumes the active user is a DBA and intentionally permits destructive
 
 ## Current scope
 
-The initial Electron UI retains the Query Mole navigation tree, query editor, result views, charting, and exports. The next engineering increments should add a packaged JDBC driver catalog, query cancellation, optional encrypted credential storage, a schema browser, and signed release builds.
+The initial Electron UI retains the Query Petruz navigation tree, query editor, result views, charting, and exports. The next engineering increments should add a packaged JDBC driver catalog, query cancellation, optional encrypted credential storage, a schema browser, and signed release builds.

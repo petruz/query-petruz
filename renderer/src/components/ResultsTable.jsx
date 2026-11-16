@@ -1,10 +1,16 @@
 import React, { useState, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import { Workbook } from 'exceljs-community';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-const ResultsTable = forwardRef(({ results, loading, filterText = '' }, ref) => {
+const sanitizeFilename = (name, fallback = 'query-results') => {
+    if (!name || typeof name !== 'string') return fallback;
+    const cleaned = name.trim().replace(/[\\/:*?"<>|]+/g, '_');
+    return cleaned || fallback;
+};
+
+const ResultsTable = forwardRef(({ results, loading, filterText = '', queryName = '' }, ref) => {
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
     const [currentPage, setCurrentPage] = useState(1);
     const rowsPerPage = 50;
@@ -70,8 +76,9 @@ const ResultsTable = forwardRef(({ results, loading, filterText = '' }, ref) => 
     };
 
     // Export Functions
-    const exportToCSV = async () => {
+    const exportToCSV = async (customName) => {
         if (!results || !results.rows) return;
+        const baseName = sanitizeFilename(customName || queryName);
 
         // Create CSV content
         const headers = results.columns.join(',');
@@ -95,7 +102,7 @@ const ResultsTable = forwardRef(({ results, loading, filterText = '' }, ref) => 
         try {
             if ('showSaveFilePicker' in window) {
                 const handle = await window.showSaveFilePicker({
-                    suggestedName: 'query-results.csv',
+                    suggestedName: `${baseName}.csv`,
                     types: [{
                         description: 'CSV Files',
                         accept: { 'text/csv': ['.csv'] },
@@ -109,7 +116,7 @@ const ResultsTable = forwardRef(({ results, loading, filterText = '' }, ref) => 
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = 'query-results.csv';
+                a.download = `${baseName}.csv`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
@@ -122,48 +129,62 @@ const ResultsTable = forwardRef(({ results, loading, filterText = '' }, ref) => 
         }
     };
 
-    const exportToExcel = async () => {
+    const exportToExcel = async (customName) => {
         if (!results || !results.rows) return;
+        const baseName = sanitizeFilename(customName || queryName);
 
-        // Create worksheet data
-        const data = [
-            results.columns, // Header row
-            ...sortedRows.map(row => results.columns.map(col => row[col] ?? ''))
-        ];
+        // Create workbook and worksheet
+        const wb = new Workbook();
+        const ws = wb.addWorksheet('Query Results');
 
-        // Create workbook
-        const ws = XLSX.utils.aoa_to_sheet(data);
-
-        // Auto-size columns
-        const colWidths = results.columns.map((col, i) => {
+        // Setup columns with auto-size width
+        ws.columns = results.columns.map((col) => {
             const maxLength = Math.max(
                 col.length,
                 ...sortedRows.map(row => String(row[col] ?? '').length)
             );
-            return { wch: Math.min(maxLength + 2, 50) };
+            return {
+                header: col,
+                key: col,
+                width: Math.min(Math.max(maxLength + 2, 10), 50),
+            };
         });
-        ws['!cols'] = colWidths;
 
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Query Results');
+        // Add rows
+        sortedRows.forEach(row => {
+            const rowData = {};
+            results.columns.forEach(col => {
+                rowData[col] = row[col] ?? '';
+            });
+            ws.addRow(rowData);
+        });
 
         // Save file
         try {
+            const buffer = await wb.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
             if ('showSaveFilePicker' in window) {
                 const handle = await window.showSaveFilePicker({
-                    suggestedName: 'query-results.xlsx',
+                    suggestedName: `${baseName}.xlsx`,
                     types: [{
                         description: 'Excel Files',
                         accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] },
                     }],
                 });
-                const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
                 const writable = await handle.createWritable();
-                await writable.write(new Blob([wbout], { type: 'application/octet-stream' }));
+                await writable.write(blob);
                 await writable.close();
             } else {
                 // Fallback
-                XLSX.writeFile(wb, 'query-results.xlsx');
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${baseName}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
             }
         } catch (err) {
             if (err.name !== 'AbortError') {
@@ -172,8 +193,9 @@ const ResultsTable = forwardRef(({ results, loading, filterText = '' }, ref) => 
         }
     };
 
-    const exportToPDF = async () => {
+    const exportToPDF = async (customName) => {
         if (!results || !results.rows) return;
+        const baseName = sanitizeFilename(customName || queryName);
 
         try {
             const doc = new jsPDF({
@@ -182,7 +204,7 @@ const ResultsTable = forwardRef(({ results, loading, filterText = '' }, ref) => 
 
             // Add title
             doc.setFontSize(16);
-            doc.text('Query Results', 14, 15);
+            doc.text(customName || queryName || 'Query Results', 14, 15);
 
             // Add timestamp
             doc.setFontSize(9);
@@ -216,7 +238,7 @@ const ResultsTable = forwardRef(({ results, loading, filterText = '' }, ref) => 
             // Save file
             if ('showSaveFilePicker' in window) {
                 const handle = await window.showSaveFilePicker({
-                    suggestedName: 'query-results.pdf',
+                    suggestedName: `${baseName}.pdf`,
                     types: [{
                         description: 'PDF Files',
                         accept: { 'application/pdf': ['.pdf'] },
@@ -228,7 +250,7 @@ const ResultsTable = forwardRef(({ results, loading, filterText = '' }, ref) => 
                 await writable.close();
             } else {
                 // Fallback
-                doc.save('query-results.pdf');
+                doc.save(`${baseName}.pdf`);
             }
         } catch (err) {
             if (err.name !== 'AbortError') {

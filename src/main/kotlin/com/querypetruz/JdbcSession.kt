@@ -84,7 +84,7 @@ class JdbcSession {
     }
 
     private fun rewriteJdbcUrl(url: String, port: Int): String =
-        Regex("^(jdbc:[^:]+://)([^/:]+)(?::\\d+)?(/.*)$").replace(url) { "${it.groupValues[1]}127.0.0.1:$port${it.groupValues[3]}" }
+        Regex("^(jdbc:.*?(?://|@//|@))([^/:]+)(?::\\d+)?([/:].*)$").replace(url) { "${it.groupValues[1]}127.0.0.1:$port${it.groupValues[3]}" }
 
     private fun closeLocked() {
         runCatching { connection?.close() }

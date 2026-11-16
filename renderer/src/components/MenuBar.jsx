@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Check } from 'lucide-react';
 
-const MenuDropdown = ({ label, items, hasSubmenu }) => {
+const MenuDropdown = ({ label, items }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [openSubmenu, setOpenSubmenu] = useState(null);
     const dropdownRef = useRef(null);
@@ -82,7 +82,7 @@ const MenuDropdown = ({ label, items, hasSubmenu }) => {
     );
 };
 
-const MenuBar = ({ onOpenLibrary, onSaveLibrary, onNewConnection, onLoadConnections, onSaveConnections, onImportDriver, onAbout, currentTheme, availableThemes, onThemeChange }) => {
+const MenuBar = ({ onOpenLibrary, onSaveLibrary, onNewConnection, onLoadConnections, onSaveConnections, onImportDriver, onAbout, onOpenSettings, currentTheme, availableThemes, onThemeChange }) => {
     return (
         <div className="flex items-center px-2 py-1 bg-[var(--menu-bg)] border-b border-[var(--menu-border)] select-none">
             <MenuDropdown
@@ -112,7 +112,7 @@ const MenuBar = ({ onOpenLibrary, onSaveLibrary, onNewConnection, onLoadConnecti
                             onClick: () => onThemeChange?.(theme)
                         })) || []
                     },
-                    { label: 'Settings', onClick: () => alert('Settings - Coming soon!') },
+                    { label: 'Settings', onClick: onOpenSettings },
                 ]}
             />
             <MenuDropdown
