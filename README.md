@@ -58,7 +58,7 @@ Create platform-specific installers:
 
 ```bash
 npm run dist:linux   # AppImage and deb, run on Linux
-npm run dist:win     # NSIS exe, run on Windows
+npm run dist:win     # NSIS installer and portable exe, run on Windows
 npm run dist:mac     # dmg, run on macOS
 ```
 
@@ -78,7 +78,7 @@ npm run test:sidecar
 
 This command also uses the Gradle Wrapper internally.
 
-The packaging workflow is defined in `.github/workflows/package.yml`. It builds native installers on each operating system using GitHub Actions: Linux produces `.AppImage` and `.deb`, Windows produces an NSIS `.exe`, and macOS produces a `.dmg`.
+The packaging workflow is defined in `.github/workflows/package.yml`. It builds native installers on each operating system using GitHub Actions: Linux produces `.AppImage` and `.deb`, Windows produces an NSIS installer `.exe` and a portable `.exe`, and macOS produces a `.dmg`.
 
 ## Basic use
 

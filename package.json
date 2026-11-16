@@ -21,7 +21,9 @@
     "start": "electron .",
     "dist": "npm run build && electron-builder --publish never",
     "dist:linux": "npm run build && electron-builder --linux AppImage deb --publish never",
-    "dist:win": "npm run build && electron-builder --win nsis --publish never",
+    "dist:win": "npm run build && electron-builder --win nsis portable --publish never",
+    "dist:win:installer": "npm run build && electron-builder --win nsis --publish never",
+    "dist:win:portable": "npm run build && electron-builder --win portable --publish never",
     "dist:mac": "npm run build && electron-builder --mac dmg --publish never"
   },
   "build": {
@@ -52,8 +54,12 @@
     },
     "win": {
       "target": [
-        "nsis"
+        "nsis",
+        "portable"
       ]
+    },
+    "portable": {
+      "artifactName": "${productName} Portable ${version}.${ext}"
     },
     "afterPack": "scripts/after-pack.cjs",
     "mac": {
