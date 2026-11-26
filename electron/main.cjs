@@ -53,7 +53,7 @@ function startSidecar() {
     });
     sidecar.stderr.on('data', (data) => console.error(`[sidecar] ${data}`));
     sidecar.on('error', (error) => {
-        dialog.showErrorBox('Query Petruz sidecar failed to start', `${error.message}\n\nThe packaged app includes a Java runtime. In development, install Java 21 or set QUERY_PETRUZ_JAVA to a Java executable.`);
+        dialog.showErrorBox('l.s.d.b sidecar failed to start', `${error.message}\n\nThe packaged app includes a Java runtime. In development, install Java 21 or set QUERY_PETRUZ_JAVA to a Java executable.`);
     });
     sidecar.on('exit', () => {
         for (const request of pending.values()) request.reject(new Error('Database sidecar stopped.'));
@@ -97,13 +97,19 @@ function invoke(method, params) {
 }
 
 function createWindow() {
+    const iconPath = path.join(__dirname, '..', 'pictures', 'icon.png');
+    if (process.platform === 'darwin' && app.dock) {
+        app.dock.setIcon(iconPath);
+    }
     const window = new BrowserWindow({
+        title: 'l.s.d.b',
         width: 1440,
         height: 920,
         minWidth: 1000,
         minHeight: 700,
         autoHideMenuBar: true,
         show: false,
+        icon: iconPath,
         webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false },
     });
     window.setMenuBarVisibility(false);

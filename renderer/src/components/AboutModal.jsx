@@ -1,14 +1,13 @@
 import React from 'react';
+import iconImg from '../assets/icon.png';
 
 const AboutModal = ({ onClose }) => {
     return (
         <div className="fixed inset-0 bg-modal-overlay flex items-center justify-center z-50">
             <div className="bg-modal-bg border border-modal-border rounded-lg shadow-xl w-96 p-6">
-                <h2 className="text-2xl font-bold text-modal-text mb-4 text-center">Query Petruz</h2>
-
                 <div className="space-y-3 text-modal-text-secondary text-sm">
-                    <div className="text-center">
-                        <div className="text-6xl mb-4">🦫</div>
+                    <div className="text-center mb-4">
+                        <img src={iconImg} alt="l.s.d.b Icon" className="w-20 h-20 mx-auto object-contain drop-shadow-md select-none" />
                     </div>
 
                     <div className="border-t border-modal-border pt-3 space-y-2">

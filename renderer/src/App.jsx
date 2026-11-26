@@ -22,6 +22,7 @@ import { useQueryExecution } from './hooks/useQueryExecution';
 import { useQueryTree } from './hooks/useQueryTree';
 import { queryPetruzApi } from './services/queryPetruzApi';
 import MarkdownComment from './components/MarkdownComment';
+import lsdbDarkLogo from './assets/lsdb_dark.png';
 
 function App() {
     // Theme
@@ -158,7 +159,7 @@ function App() {
                         style={{ width: layout.sidebarWidth }}
                     >
                         <div className="p-4 border-b border-tree-border flex justify-between items-center bg-tree-header-bg">
-                            <span className="font-bold text-xl tracking-tight text-tree-header-text">Query Mole</span>
+                            <img src={lsdbDarkLogo} alt="l.s.d.b" className="h-9 w-auto max-w-[200px] object-contain select-none" />
                             <div className="flex gap-1">
                                 <button onClick={() => modals.setModal({ type: 'ADD_FOLDER' })} className="text-tree-text-muted hover:text-tree-text" title="Add Folder">+</button>
                             </div>

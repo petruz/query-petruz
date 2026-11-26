@@ -1,5 +1,5 @@
 const invoke = (method, params = {}) => {
-    if (!window.queryPetruz) throw new Error('Query Petruz desktop bridge is unavailable. Start the app with Electron.')
+    if (!window.queryPetruz) throw new Error('l.s.d.b desktop bridge is unavailable. Start the app with Electron.')
     return window.queryPetruz.invoke(method, params)
 }
 
@@ -9,7 +9,7 @@ export const queryPetruzApi = {
     testConnection: (connection) => invoke('connection:test', connection),
     execute: (sql) => invoke('query:execute', { sql }),
     importJdbcDriver: () => {
-        if (!window.queryPetruz?.importJdbcDriver) throw new Error('Query Petruz desktop bridge is unavailable.')
+        if (!window.queryPetruz?.importJdbcDriver) throw new Error('l.s.d.b desktop bridge is unavailable.')
         return window.queryPetruz.importJdbcDriver()
     },
 }

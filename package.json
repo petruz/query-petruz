@@ -28,13 +28,15 @@
   },
   "build": {
     "appId": "com.querypetruz.desktop",
-    "productName": "Query Petruz",
+    "productName": "l.s.d.b",
+    "icon": "pictures/icon.png",
     "directories": {
       "output": "release"
     },
     "files": [
       "electron/**/*",
       "scripts/**/*",
+      "pictures/**/*",
       "dist/renderer/**/*",
       "package.json"
     ],
@@ -68,7 +70,7 @@
         "dmg"
       ],
       "extendInfo": {
-        "NSLocalNetworkUsageDescription": "Query Petruz needs access to your local network to connect to database servers."
+        "NSLocalNetworkUsageDescription": "l.s.d.b needs access to your local network to connect to database servers."
       }
     }
   },
