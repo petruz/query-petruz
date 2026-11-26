@@ -1,6 +1,6 @@
-# Query Petruz
+# l.s.d.b
 
-Query Petruz is a single-user desktop client for DBA database troubleshooting. It uses an Electron/React user interface derived from Query Petruz and a private Kotlin/JDBC sidecar. The renderer communicates with that sidecar over standard input/output only: there is no HTTP server, browser-exposed endpoint, or local API port.
+l.s.d.b is a single-user desktop client for DBA database troubleshooting. It uses an Electron/React user interface derived from l.s.d.b and a private Kotlin/JDBC sidecar. The renderer communicates with that sidecar over standard input/output only: there is no HTTP server, browser-exposed endpoint, or local API port.
 
 ## Capabilities
 
@@ -36,7 +36,7 @@ npm run dev
 
 ## JDBC drivers
 
-Use **Connection > Import JDBC Driver...** and select a trusted `.jar` file. Query Petruz copies it to its private user-data directory and immediately reloads the sidecar, so restarting the application is not necessary. Open a new connection afterward to refresh the driver list.
+Use **Connection > Import JDBC Driver...** and select a trusted `.jar` file. l.s.d.b copies it to its private user-data directory and immediately reloads the sidecar, so restarting the application is not necessary. Open a new connection afterward to refresh the driver list.
 
 The folder is managed by Electron and is operating-system specific: on Linux it is normally `~/.config/query-petruz/drivers`; Windows and macOS use their standard application-data locations. The project-local `drivers/` directory is retained only as a development fallback. Both locations exclude `*.jar` through `.gitignore`, so drivers are never committed with the source. A JDBC driver is executable code: only import JARs downloaded from a trusted vendor or repository.
 
@@ -67,7 +67,7 @@ Installer output is written to `release/`. Cross-platform packaging should be pe
 On macOS, the build process automatically includes `NSLocalNetworkUsageDescription` in `Info.plist` and executes an `afterPack` hook ([scripts/after-pack.cjs](file:///Users/petruz/git-repo/query-petruz/scripts/after-pack.cjs)) to unify the ad-hoc signatures of the Electron app and the embedded Java sidecar runtime, ensuring compatibility with macOS Local Network Privacy (NECP). For unsigned downloads, remove the Gatekeeper quarantine flag once after dragging to `/Applications`:
 
 ```bash
-xattr -cr "/Applications/Query Petruz.app"
+xattr -cr "/Applications/l.s.d.b.app"
 ```
 
 Run tests:
@@ -116,7 +116,7 @@ The current domain model supports an optional `ssh` object in a connection profi
 }
 ```
 
-Before using the profile, add the bastion host key using a trusted process, for example `ssh-keyscan` only after independently verifying the fingerprint. Query Petruz uses `StrictHostKeyChecking=yes` and rejects unknown or changed hosts.
+Before using the profile, add the bastion host key using a trusted process, for example `ssh-keyscan` only after independently verifying the fingerprint. l.s.d.b uses `StrictHostKeyChecking=yes` and rejects unknown or changed hosts.
 
 ## Security model
 
@@ -124,4 +124,4 @@ This tool assumes the active user is a DBA and intentionally permits destructive
 
 ## Current scope
 
-The initial Electron UI retains the Query Petruz navigation tree, query editor, result views, charting, and exports. The next engineering increments should add a packaged JDBC driver catalog, query cancellation, optional encrypted credential storage, a schema browser, and signed release builds.
+The initial Electron UI retains the l.s.d.b navigation tree, query editor, result views, charting, and exports. The next engineering increments should add a packaged JDBC driver catalog, query cancellation, optional encrypted credential storage, a schema browser, and signed release builds.
